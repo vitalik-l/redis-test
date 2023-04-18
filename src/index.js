@@ -1,9 +1,8 @@
 import { fork } from 'node:child_process';
 import config from './config.js';
-import { startConsumer, clearData } from './consumer.js';
+import { startConsumer } from './consumer.js';
 
 async function main() {
-  await clearData();
   for (let i = 0; i < config.PRODUCERS; i++) {
     fork('./src/producer');
   }

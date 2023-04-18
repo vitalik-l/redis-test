@@ -7,8 +7,6 @@ const OUTPUT_FILE = './results.json';
 const redis = new Redis();
 const startTime = Date.now();
 
-export const clearData = () => redis.flushall();
-
 const saveResults = (numbersGenerated, startTime) => {
   const timeSpent = Date.now() - startTime;
   return fs.writeFile(OUTPUT_FILE, JSON.stringify({ timeSpent, numbersGenerated }, null, 2));
@@ -18,7 +16,15 @@ export const startConsumer = async () => {
   let lastId = 0;
   let valuesSet = new Set();
   while (valuesSet.size !== config.N) {
-    const response = await redis.xread('COUNT', 1, 'STREAMS', 'numbers', lastId);
+    const response = await redis.xread(
+      'COUNT',
+      1,
+      'BLOCK',
+      5000,
+      'STREAMS',
+      config.STREAM_KEY,
+      lastId,
+    );
     if (response) {
       const data = response[0][1][0];
       const fieldNamesAndValues = data[1];
@@ -30,6 +36,7 @@ export const startConsumer = async () => {
         record[fieldNamesAndValues[i]] = fieldNamesAndValues[i + 1];
       }
       lastId = record.id;
+      await redis.xdel(config.STREAM_KEY, lastId);
       if (!valuesSet.has(record.number)) {
         console.log('consume', record.number, 'length', valuesSet.size);
       }

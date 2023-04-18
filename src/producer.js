@@ -9,7 +9,7 @@ const generateNumber = (max) => {
 
 const startProducer = async () => {
   const number = generateNumber(config.N);
-  await redis.xadd('numbers', '*', 'number', number);
+  await redis.xadd(config.STREAM_KEY, '*', 'number', number);
   setTimeout(startProducer, 1000);
 };
 
